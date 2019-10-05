@@ -18,6 +18,14 @@ const port = process.env.PORT || 3000;
     }
 }); */
 
+/* const multer = require("multer");
+const upload = multer({
+    dest: "images"
+})
+
+app.post("/upload", upload.single("upload"), (req,res) => {
+    res.status(200).send("");
+}); */
 
 
 app.use(express.json());
@@ -54,10 +62,10 @@ app.listen(port, () => {
     console.log("Server is running at "+ port); 
 });
 
-const Task = require("./models/task");
+/* const Task = require("./models/task");
 const User = require("./models/user");
 
-/* const main = async() =>{
+const main = async() =>{
     const task = await Task.findById("5d836484ccc12a17940135eb");
     await task.populate("owner").execPopulate();
     console.log(task.owner);
