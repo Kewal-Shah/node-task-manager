@@ -2,14 +2,14 @@ const express = require("express");
 const router = new express.Router();
 const User = require("../models/user");
 const auth = require("../middleware/auth");
+const sharp = require("sharp");
 const multer = require("multer");
 const upload = multer({
-    dest: "avatars",
     limits :{
         fileSize: 1000000
     },
     fileFilter(req, file, callback) {
-        if(!file.originalname.match(/\.(JPG|jpg|jpeg|JPEG|png|PNG)$/)){
+        if(!file.originalname.match(/\.(jpg|JPG|jpeg|png|PNG)$/)){
             return callback(new Error("Please upload an image file"));
         }
         callback(undefined, true);
@@ -17,8 +17,37 @@ const upload = multer({
 });
 
 //Upload Image to Server
-router.post("/users/me/avatar", upload.single("avatar"), (req, res) => {
+router.post("/users/me/avatar",auth, upload.single("avatar"), async (req, res) => {
+    const buffer = await sharp(req.file.buffer).resize({width: 250,  height: 250}).png().toBuffer();
+    req.user.avatar = buffer;
+    await req.user.save();
     res.status(200).send("Uploaded");
+}, (error, req, res, next) => {
+    res.status(400).send({error: error.message});
+});
+
+// Remove image from user's profile
+router.delete("/users/me/avatar", auth, async (req, res) => {
+    req.user.avatar = undefined;
+    await req.user.save();
+    res.status(200).send("Image Deleted");
+}, (error, req, res, next) => {
+    res.status(400).send({error: error.message});
+});
+
+//Serve image of a User
+router.get("/users/:id/avatar", async (req, res) => {
+    try{
+        const user = await User.findById(req.params.id);
+        if(!user || !user.avatar) {
+            throw new Error("No image found for this user");
+        }
+        res.set("Content-Type", "image/jpg");
+        res.send(user.avatar);
+    }catch(error){
+        res.status(400).send();
+    }
+    
 });
 
 // Create Detail of a user
